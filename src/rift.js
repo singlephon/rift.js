@@ -54,8 +54,10 @@ export default class Rift {
         const riftName = el.getAttribute('rift');
         if (riftName) {
             el.rift = RiftContainer.make(String(riftName));
+            el.rift.initWireComponent(el.getAttribute('wire:id'));
             el.dataset.riftInit = true;
-            // console.log(`[Rift] Bound ${riftName} to element`, el);
+
+            console.log(`[Rift] Bound ${riftName} to element`, el);
 
             el.childNodes.forEach(btn => {
                 btn.rift = el.rift;
