@@ -1,6 +1,7 @@
 export default class {
 
     wireId = null;
+    syncable = true;
 
     constructor() {
         this.initCallableRemote()
@@ -14,6 +15,10 @@ export default class {
 
                 if (target.__syncKeys.includes(prop)) {
                     let component = Livewire.find(target.wireId);
+                    if (!this.syncable) {
+                        console.warn("Don't update")
+                        return true;
+                    }
                     if (component) {
                         component.$set(prop, value);
                     } else {
@@ -41,6 +46,16 @@ export default class {
                 return await component.$set(prop, value);
             }
         });
+    }
+
+    livewireSynchronizer (data) {
+        this.syncable = false;
+        for (let prop of this.synchronizer()) {
+            if (prop in data) {
+                this[prop] = data[prop];
+            }
+        }
+        this.syncable = true;
     }
 
     initWireComponent (wireId) {
