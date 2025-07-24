@@ -6,15 +6,20 @@ export default class {
     constructor() {
         this.initCallableRemote()
 
-        const synchronizer = this.synchronizer?.() ?? [];
-        this.__syncKeys = synchronizer;
+        // const synchronizer = this.synchronizer?.() ?? [];
+        // this.__syncKeys = synchronizer;
+        //
+        this.__syncKeys = [];
+        this._synchronizer = [];
 
         return new Proxy(this, {
             set: (target, prop, value) => {
                 target[prop] = value;
+                const component = Livewire.find(this.wireId);
+                if (component)
+                    this._synchronizer = Array.from(component._synchronizer)
 
-                if (target.__syncKeys.includes(prop)) {
-                    let component = Livewire.find(target.wireId);
+                if (this._synchronizer.includes(prop)) {
                     if (!this.syncable) {
                         console.warn("Don't update")
                         return true;
@@ -50,7 +55,7 @@ export default class {
 
     livewireSynchronizer (data) {
         this.syncable = false;
-        for (let prop of this.synchronizer()) {
+        for (let prop of this._synchronizer) {
             if (prop in data) {
                 this[prop] = data[prop];
             }
