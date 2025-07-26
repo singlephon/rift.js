@@ -37,13 +37,13 @@ export default class Rift {
 
             Livewire.hook('morph.updating', ({ el }) => {
                 if (el.hasAttribute && el.hasAttribute('rift')) {
-                    this.#initRiftOnDOMElement(el);
+                    // this.#initRiftOnDOMElement(el);
                 }
             });
             //
             Livewire.hook('morph.updated', ({ el }) => {
                 if (el.hasAttribute && el.hasAttribute('rift')) {
-                    this.#initRiftOnDOMElement(el);
+                    // this.#initRiftOnDOMElement(el);
                 }
             });
 
@@ -86,14 +86,15 @@ export default class Rift {
                     console.log(component)
                     const needle = snapshot.memo.id;
                     const component_local = document.querySelector(`[wire\\:id="${needle}"]`);
-                    if (!component_local) throw new Error(`Rift component ${snapshot.memo.id} not found in RiftComponents{}`);
+                    if (!component_local) throw new Error(`[Rift] Component ${snapshot.memo.id} not found in RiftComponents{}`);
 
                     // const wire = Livewire.find(snapshot.memo.id);
                     // wire.count = 111
                     // console.log()
                     // console.log("Found", component)
                     // console.log("SNAPSHOT", snapshot)
-                    component_local._x_dataStack[0].rift.livewireSynchronizer(snapshot.data);
+                    if (component_local._x_dataStack)
+                        component_local._x_dataStack[0].rift.livewireSynchronizer(snapshot.data);
 
                     // component.rift.syncable = false;
                     // for (let prop of component.rift.synchronizer()) {
@@ -126,13 +127,22 @@ export default class Rift {
             el.rift.initWireComponent(el.getAttribute('wire:id'));
             el.dataset.riftInit = true;
 
+            // el.rift.livewireSynchronizer(snapshot.data);
+
             this.RiftComponents[el.getAttribute('wire:id')] = el;
+
+
+            // console.log(el.rift.switches)
 
             console.log(`[Rift] Bound ${riftName} to element`, el)
 
             el.childNodes.forEach(btn => {
                 btn.rift = el.rift;
             });
+
+            const snapshot = JSON.parse(el.getAttribute('wire:snapshot'));
+            console.log(snapshot)
+            el.rift.livewireSynchronizer(snapshot.data);
 
             if (!el.hasAttribute('x-data')) {
                 el.setAttribute('x-data', '{ rift: {} }');
