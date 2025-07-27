@@ -2,9 +2,6 @@ import { RiftContainer } from "@singlephon/rift";
 import DataUtils from "./utils/data-utils";
 
 export default class Rift {
-
-    static version = '0.2.0'
-
     RiftContainer;
     RiftModules;
     RiftComponents = {};
@@ -115,7 +112,6 @@ export default class Rift {
             throw new Error(`[Rift] Evaluated variable ${fn} contains crashed while running: ${error}`);
         }
     }
-
 
     afterAlpineInit (callback) {
         document.addEventListener("alpine:init", callback)

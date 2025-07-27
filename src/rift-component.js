@@ -1,3 +1,5 @@
+import Version from "./utils/version";
+
 const do_not_sync = [
     '_id_', '_snapshot_', '_synchronizer_', '_sync_', '_mounted_'
 ]
@@ -103,5 +105,7 @@ export default class RiftComponent {
         }
     }
 
-
+    _version_ (version) {
+        Version.check(version);
+    }
 }
