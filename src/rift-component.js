@@ -106,6 +106,6 @@ export default class RiftComponent {
     }
 
     _version_ (version) {
-        Version.check(version);
+        Version.check(version, { soft: false });
     }
 }
