@@ -1,4 +1,4 @@
-import { RiftContainer } from "packages/singlephon/rift/_js/index";
+import { RiftContainer } from "@singlephon/rift";
 import DataUtils from "./utils/data-utils";
 
 export default class Rift {

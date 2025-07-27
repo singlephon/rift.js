@@ -2,7 +2,7 @@ const do_not_sync = [
     '_id_', '_snapshot_', '_synchronizer_', '_sync_', '_mounted_'
 ]
 
-export default class {
+export default class RiftComponent {
 
     _id_ = null;
     _snapshot_ = null;
