@@ -1,20 +1,20 @@
-import { RiftContainer } from "@singlephon/rift";
+import { RiftContainer } from "packages/singlephon/rift/_js/index";
+import DataUtils from "./utils/data-utils";
 
 export default class Rift {
+
+    static version = '0.2.0'
 
     RiftContainer;
     RiftModules;
     RiftComponents = {};
 
+    RiftHooks = {};
+
     constructor(RiftModules) {
         this.RiftContainer = RiftContainer;
         this.RiftModules = RiftModules;
-        this.bindClasses();
-    }
 
-
-    bindClasses () {
-        // console.log(this.RiftModules)
         for (let path in this.RiftModules) {
             let name = path
                 .replace('./rift/', '')
@@ -25,128 +25,94 @@ export default class Rift {
         }
     }
 
-    start () {
-        this.afterAlpineInit(() => {
-            Livewire.hook('morph.added', ({ el }) => {
-                if (el.hasAttribute && el.hasAttribute('rift')) {
-                    this.#initRiftOnDOMElement(el);
-                }
-            });
-
-            document.querySelectorAll('[rift]').forEach(el => this.#initRiftOnDOMElement(el));
-
-            Livewire.hook('morph.updating', ({ el }) => {
-                if (el.hasAttribute && el.hasAttribute('rift')) {
-                    // this.#initRiftOnDOMElement(el);
-                }
-            });
-            //
-            Livewire.hook('morph.updated', ({ el }) => {
-                if (el.hasAttribute && el.hasAttribute('rift')) {
-                    // this.#initRiftOnDOMElement(el);
-                }
-            });
-
-            // Livewire.hook('request', ({ url, options, payload, respond, succeed, fail }) => {
-            //     // Runs after commit payloads are compiled, but before a network request is sent...
-            //
-            //     respond(({ status, response }) => {
-            //         // Runs when the response is received...
-            //         // "response" is the raw HTTP response object
-            //         // before await response.text() is run...
-            //     })
-            //
-            //     succeed(({ status, json }) => {
-            //         // Runs when the response is received...
-            //         // "json" is the JSON response object...
-            //         console.log(json.components[0].effects)
-            //     })
-            //
-            //     fail(({ status, content, preventDefault }) => {
-            //         // Runs when the response has an error status code...
-            //         // "preventDefault" allows you to disable Livewire's
-            //         // default error handling...
-            //         // "content" is the raw response content...
-            //     })
-            // });
-
-            Livewire.hook('commit', ({ component, commit, respond, succeed, fail }) => {
-                // Runs immediately before a commit's payload is sent to the server...
-                // console.log(component)
-
-                respond(() => {
-                    // Runs after a response is received but before it's processed...
-                })
-
-                succeed(({ snapshot, effect }) => {
-                    // Runs after a successful response is received and processed
-                    // with a new snapshot and list of effects...
-                    snapshot = JSON.parse(snapshot)
-                    // console.log(component.effects.html)
-                    console.log(component)
-                    const needle = snapshot.memo.id;
-                    const component_local = document.querySelector(`[wire\\:id="${needle}"]`);
-                    if (!component_local) throw new Error(`[Rift] Component ${snapshot.memo.id} not found in RiftComponents{}`);
-
-                    // const wire = Livewire.find(snapshot.memo.id);
-                    // wire.count = 111
-                    // console.log()
-                    // console.log("Found", component)
-                    // console.log("SNAPSHOT", snapshot)
-                    if (component_local._x_dataStack)
-                        component_local._x_dataStack[0].rift.livewireSynchronizer(snapshot.data);
-
-                    // component.rift.syncable = false;
-                    // for (let prop of component.rift.synchronizer()) {
-                    //     if (prop in snapshot.data) {
-                    //         component.rift[prop] = snapshot.data[prop];
-                    //     }
-                    // }
-                    // component.rift.syncable = true
-                    // component.rift.syncable = false;
-                    // component.rift.count=0;
-                    // component.rift.syncable = true;
-
-
-                    // console.log(el.rift.count = Math.random());
-                })
-
-                fail(() => {
-                    // Runs if some part of the request failed...
-                })
-            })
-        })
+    beforeInit (callback) {
+        this.RiftHooks.beforeInit = this.isTypeof(callback, 'function')
+        return this;
     }
 
-    #initRiftOnDOMElement(el) {
-        if (el.dataset.riftInit) return;
+    afterInit (callback) {
+        this.RiftHooks.afterInit = this.isTypeof(callback, 'function')
+        return this;
+    }
 
-        const riftName = el.getAttribute('rift');
-        if (riftName) {
-            el.rift = RiftContainer.make(String(riftName));
-            el.rift.initWireComponent(el.getAttribute('wire:id'));
-            el.dataset.riftInit = true;
+    start () {
+        this.evaluate(this.RiftHooks.beforeInit, this.RiftContainer);
+        this.afterAlpineInit(() => {
+            document.querySelectorAll('[rift]')
+                .forEach(element => this.attachRiftToElement(element));
 
-            // el.rift.livewireSynchronizer(snapshot.data);
-
-            this.RiftComponents[el.getAttribute('wire:id')] = el;
-
-            // console.log(el.rift.switches)
-
-            console.log(`[Rift] Bound ${riftName} to element`, el)
-
-            el.childNodes.forEach(btn => {
-                btn.rift = el.rift;
+            Livewire.hook('morph.added', ({ el }) => {
+                if (el.hasAttribute && el.hasAttribute('rift')) {
+                    this.attachRiftToElement(el);
+                }
             });
 
-            const snapshot = JSON.parse(el.getAttribute('wire:snapshot'));
-            // console.log(snapshot)
-            el.rift.livewireSynchronizer(snapshot.data);
+            Livewire.hook('commit', ({ component, commit, respond, succeed, fail }) => {
+                succeed(({ snapshot, effect }) => {
+                    snapshot = DataUtils.extractData(JSON.parse(snapshot));
+                    const id = snapshot.memo.id;
+                    const component = document.querySelector(`[wire\\:id="${id}"]`);
+                    if (!component) throw new Error(`[Rift] Component ${snapshot.memo.id} not found`);
 
-            if (!el.hasAttribute('x-data')) {
-                el.setAttribute('x-data', '{ rift: {} }');
-                el.setAttribute('x-init', '$nextTick(() => { rift = $el.rift })');
-            }
+                    if (component._x_dataStack){
+                        const rift = component._x_dataStack[0].rift;
+                        rift._callHookMethod_ ('boot', snapshot);
+                        rift._rift_synchronizer_(snapshot.data);
+                        rift._callHookMethod_ ('booted', snapshot);
+                    }
+                })
+            })
+
+            this.evaluate(this.RiftHooks.afterInit, this.RiftContainer, this.RiftComponents);
+        });
+    }
+
+    attachRiftToElement (element) {
+        if (element.dataset.riftInit) return;
+
+        const riftName = element.getAttribute('rift');
+        if (riftName) {
+            const id = element.getAttribute('wire:id');
+            const snapshot = DataUtils.extractData(JSON.parse(element.getAttribute('wire:snapshot')));
+            const rift = RiftContainer.make(String(riftName), id, snapshot);
+
+            rift._callHookMethod_ ('mount', snapshot);
+            rift._callHookMethod_ ('boot', snapshot);
+
+            console.info(`[Rift] Bound ${riftName} to element`, element)
+
+            element.childNodes.forEach(item => {
+                item.rift = rift;
+            });
+
+            element.rift = rift;
+            element.dataset.riftInit = true;
+
+            rift._rift_synchronizer_ (snapshot.data);
+            rift._rift_callable_ ();
+            rift._rift_mount_ ();
+
+            rift._callHookMethod_ ('booted', snapshot);
+
+            this.RiftComponents[id] = rift;
+        }
+    }
+
+    isTypeof (variable, type, error = null) {
+        if (typeof variable === type)
+            return variable;
+        else
+            throw new Error(error ? error : `[Rift] Evaluated variable ${variable} does not match the expected ${type} type`);
+    }
+
+    evaluate (fn, ...args) {
+        if (typeof fn !== 'function')
+            throw new Error(`[Rift] Evaluated variable ${fn} does not match the expected ${type} type`);
+
+        try {
+            return fn (...args);
+        } catch (error) {
+            throw new Error(`[Rift] Evaluated variable ${fn} contains crashed while running: ${error}`);
         }
     }
 
