@@ -131,7 +131,6 @@ export default class Rift {
 
             this.RiftComponents[el.getAttribute('wire:id')] = el;
 
-
             // console.log(el.rift.switches)
 
             console.log(`[Rift] Bound ${riftName} to element`, el)
@@ -141,7 +140,7 @@ export default class Rift {
             });
 
             const snapshot = JSON.parse(el.getAttribute('wire:snapshot'));
-            console.log(snapshot)
+            // console.log(snapshot)
             el.rift.livewireSynchronizer(snapshot.data);
 
             if (!el.hasAttribute('x-data')) {

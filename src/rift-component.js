@@ -1,3 +1,5 @@
+import onChange from 'on-change';
+
 export default class {
 
     wireId = null;
@@ -10,7 +12,6 @@ export default class {
         // const synchronizer = this.synchronizer?.() ?? [];
         // this.__syncKeys = synchronizer;
         //
-        this.__syncKeys = [];
         this._synchronizer = [];
 
         return new Proxy(this, {

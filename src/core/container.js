@@ -7,7 +7,7 @@ class Container {
     }
 
     bind(ClassRef, name = null) {
-        const factory = () => new ClassRef();
+        const factory = (...args) => new ClassRef(...args);
         if (name) {
             this.namedBindings.set(name, factory);
         } else {
