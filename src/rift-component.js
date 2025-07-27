@@ -2,7 +2,7 @@ export default class {
 
     wireId = null;
     syncable = true;
-    booted = false;
+    mounted = false;
 
     constructor() {
         this.initCallableRemote();
@@ -65,8 +65,11 @@ export default class {
     }
 
     initBackendCallListener () {
-        if (this.booted)
+        if (this.mounted)
             return;
+
+        // RiftMount
+        // console.log('MOUNT !')
 
         Livewire.on(`rift:call:${this.wireId}`, ({ method, arguments: args }) => {
             if (typeof this[method] === 'function') {
@@ -75,7 +78,7 @@ export default class {
                 console.error(`[Rift] Called method '${method}' not found on component.`);
             }
         });
-        this.booted = true;
+        this.mounted = true;
     }
 
     // livewireSynchronizer (data) {
@@ -89,8 +92,11 @@ export default class {
     //     this.syncable = true;
     // }
 
+    // RiftSync
     livewireSynchronizer(data) {
         this.syncable = false;
+
+        // console.log('SYNC !')
 
         for (let prop of data._synchronizer[0]) {
             if (prop in data) {
