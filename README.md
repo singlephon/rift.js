@@ -30,28 +30,22 @@ composer require singlephon/rift
 
 ---
 
-### JavaScript (NPM)
+Then install via NPM:
 
-#### A) If published on npm
+### JavaScript (NPM)
 
 ```bash
 npm install @singlephon/rift
 ```
 
-or
-
-```bash
-yarn add @singlephon/rift
-```
 
 ### Import Rift in your `resources/js/app.js`:
 
 ```js
-...
-
 import { Rift } from "@singlephon/rift";
 
-new Rift(import.meta.glob('./rift/**/*.js', { eager: true })).start();
+new Rift(import.meta.glob('./rift/**/*.js', { eager: true }))
+    .start()
 ```
 
 ---
