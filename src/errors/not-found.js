@@ -9,6 +9,15 @@ export class MethodNotFoundError extends RiftError {
     }
 }
 
+export class PropertyNotFoundError extends RiftError {
+    constructor(prop, componentId) {
+        super(`Property '${prop}' not found on component '${componentId}'`, {
+            code: 'PROPERTY_NOT_FOUND',
+            context: { prop, componentId }
+        });
+    }
+}
+
 export class SyncError extends RiftError {
     constructor(prop, componentId) {
         super(`Sync failed for '${prop}' on '${componentId}'`, {

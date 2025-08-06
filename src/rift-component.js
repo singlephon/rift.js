@@ -1,8 +1,8 @@
 import Version from "./utils/version";
-import {ComponentNotFoundError, MethodNotFoundError, SyncError} from "./errors/not-found";
+import {ComponentNotFoundError, MethodNotFoundError, PropertyNotFoundError, SyncError} from "./errors/not-found";
 
 const do_not_sync = [
-    '_id_', '_snapshot_', '_synchronizer_', '_sync_', '_mounted_'
+    '_id_', '_snapshot_', '_synchronizer_', '_component_members_', '_sync_', '_mounted_'
 ]
 
 const do_not_call = ['__v_isRef', '__v_isReadonly', '__v_raw', '__v_skip', 'Symbol("Symbol.toStringTag")']
@@ -91,13 +91,29 @@ export default class RiftComponent {
 
     _rift_callable_ () {
         this.rift = new Proxy({}, {
+            set: async (target, prop, value) => {
+                let component = Livewire.find(this._id_);
+                if (!component) {
+                    this._throw_error_(new ComponentNotFoundError(this._id_));
+                    return undefined;
+                }
+                if (component._component_members_.properties.includes(prop)) {
+                    return await component.$set(prop, value);
+                } else {
+                    this._throw_error_(new PropertyNotFoundError(prop, this._id_))
+                }
+            },
             get: (target, prop) => {
                 let component = Livewire.find(this._id_);
                 if (!component) {
                     this._throw_error_(new ComponentNotFoundError(this._id_));
                     return undefined;
                 }
+
                 if (typeof prop === 'symbol') return;
+
+                if (!component._component_members_.methods.includes(prop) || !component._component_members_.properties.includes(prop))
+                    return;
 
                 if (typeof component[prop] === 'function') {
                     if (do_not_call.includes(prop))
@@ -107,20 +123,12 @@ export default class RiftComponent {
                         return (...args) => component.$call(prop, ...args);
                     } else {
                         this._throw_error_(new MethodNotFoundError(prop, this._id_))
-                        return undefined;
+                        return () => {};
                     }
                 } else {
                     return component[prop];
                 }
             },
-            set: async (target, prop, value) => {
-                let component = Livewire.find(this._id_ + 's');
-                if (!component) {
-                    this._throw_error_(new ComponentNotFoundError(this._id_));
-                    return undefined;
-                }
-                return await component.$set(prop, value);
-            }
         });
     }
 
