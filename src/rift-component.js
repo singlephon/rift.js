@@ -1,5 +1,11 @@
 import Version from "./utils/version";
-import {ComponentNotFoundError, MethodNotFoundError, PropertyNotFoundError, SyncError} from "./errors/not-found";
+import {
+    ComponentNotFoundError,
+    MemberNotFoundError,
+    MethodNotFoundError,
+    PropertyNotFoundError,
+    SyncError
+} from "./errors/not-found";
 
 const do_not_sync = [
     '_id_', '_snapshot_', '_synchronizer_', '_component_members_', '_sync_', '_mounted_'
@@ -100,7 +106,7 @@ export default class RiftComponent {
                 if (component._component_members_.properties.includes(prop)) {
                     return await component.$set(prop, value);
                 } else {
-                    this._throw_error_(new PropertyNotFoundError(prop, this._id_))
+                    this._throw_error_(new MemberNotFoundError(prop, this._id_, 'set'));
                 }
             },
             get: (target, prop) => {
@@ -112,9 +118,6 @@ export default class RiftComponent {
 
                 if (typeof prop === 'symbol') return;
 
-                if (!component._component_members_.methods.includes(prop) || !component._component_members_.properties.includes(prop))
-                    return;
-
                 if (typeof component[prop] === 'function') {
                     if (do_not_call.includes(prop))
                         return;
@@ -122,7 +125,7 @@ export default class RiftComponent {
                     if (component._component_members_.methods.includes(prop)) {
                         return (...args) => component.$call(prop, ...args);
                     } else {
-                        this._throw_error_(new MethodNotFoundError(prop, this._id_))
+                        this._throw_error_(new MemberNotFoundError(prop, this._id_, 'get'));
                         return () => {};
                     }
                 } else {

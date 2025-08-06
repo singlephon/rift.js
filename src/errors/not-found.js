@@ -36,3 +36,10 @@ export class ComponentNotFoundError extends RiftError {
         });
     }
 }
+
+export class MemberNotFoundError extends RiftError {
+    constructor(member, componentId, context) {
+        super(`Cannot find member '${member}' on Proxy[${context}] in component '${componentId}'`);
+        this.name = 'MemberNotFoundError';
+    }
+}
