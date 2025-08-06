@@ -1,7 +1,7 @@
 import { VersionError } from './errors';
 
 export default class Version {
-    static _exact_ = '0.2.2'
+    static _exact_ = '0.2.3'
 
     static check (version, config = { soft: false}) {
         if (config.soft) {

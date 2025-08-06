@@ -1,14 +1,18 @@
 import Version from "./utils/version";
+import {ComponentNotFoundError, MethodNotFoundError, SyncError} from "./errors/not-found";
 
 const do_not_sync = [
     '_id_', '_snapshot_', '_synchronizer_', '_sync_', '_mounted_'
 ]
+
+const do_not_call = ['__v_isRef', '__v_isReadonly', '__v_raw', '__v_skip', 'Symbol("Symbol.toStringTag")']
 
 export default class RiftComponent {
 
     _id_ = null;
     _snapshot_ = null;
     _synchronizer_ = [];
+    _component_members_ = {};
 
     _sync_ = true;
     _mounted_ = false;
@@ -38,11 +42,36 @@ export default class RiftComponent {
                     if (component) {
                         component.$set(prop, value);
                     } else {
-                        console.error(`[Rift] Livewire component with wireId=${target._id_} not found for sync of ${prop}`);
+                        this._throw_error_(new SyncError(prop, target._id_));
                     }
                 }
 
                 return true;
+            },
+            get(obj, prop) {
+                const value = obj[prop];
+
+                if (typeof value === 'function') {
+                    return function (...args) {
+                        let result;
+
+                        try {
+                            result = value.apply(this, args);
+                        } catch (error) {
+                            obj._throw_error_(error)
+                        }
+
+                        if (result instanceof Promise) {
+                            return result.catch(error => {
+                                obj._throw_error_(error)
+                            });
+                        }
+
+                        return result;
+                    };
+                }
+
+                return value;
             }
         });
     }
@@ -64,17 +93,32 @@ export default class RiftComponent {
         this.rift = new Proxy({}, {
             get: (target, prop) => {
                 let component = Livewire.find(this._id_);
-                if (!component) throw new Error(`[Rift] Component ${this._id_} not found`);
+                if (!component) {
+                    this._throw_error_(new ComponentNotFoundError(this._id_));
+                    return undefined;
+                }
+                if (typeof prop === 'symbol') return;
 
                 if (typeof component[prop] === 'function') {
-                    return (...args) => component.$call(prop, ...args);
+                    if (do_not_call.includes(prop))
+                        return;
+
+                    if (component._component_members_.methods.includes(prop)) {
+                        return (...args) => component.$call(prop, ...args);
+                    } else {
+                        this._throw_error_(new MethodNotFoundError(prop, this._id_))
+                        return undefined;
+                    }
                 } else {
                     return component[prop];
                 }
             },
             set: async (target, prop, value) => {
-                let component = Livewire.find(this._id_);
-                if (!component) throw new Error(`[Rift] Component ${this._id_} not found`);
+                let component = Livewire.find(this._id_ + 's');
+                if (!component) {
+                    this._throw_error_(new ComponentNotFoundError(this._id_));
+                    return undefined;
+                }
                 return await component.$set(prop, value);
             }
         });
@@ -88,7 +132,7 @@ export default class RiftComponent {
             if (typeof this[method] === 'function') {
                 this[method](...args);
             } else {
-                console.error(`[Rift] Called method '${method}' not found on component.`);
+                this._throw_error_(new MethodNotFoundError(method, this._id_))
             }
         });
         this._mounted_ = true;
@@ -97,15 +141,17 @@ export default class RiftComponent {
 
     _callHookMethod_ (hook, ...args) {
         if (typeof this[hook] === 'function') {
-            try {
-                this[hook](...args);
-            } catch (error) {
-                throw new Error(`[Rift] Error in "${hook}" hook: ${error}`);
-            }
+            return this[hook](...args);
         }
+    }
+
+    _throw_error_ (error) {
+        const proceed = this._callHookMethod_?.('exception', error);
+        if (proceed || typeof proceed === 'undefined') throw error;
     }
 
     _version_ (version) {
         Version.check(version, { soft: false });
     }
+
 }
