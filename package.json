@@ -1,6 +1,6 @@
 {
     "name": "@singlephon/rift",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "description": "A lightweight micro-framework connecting Blade, Livewire, Alpine.js, and JS seamlessly in Laravel projects.",
     "main": "index.js",
     "module": "index.js",
